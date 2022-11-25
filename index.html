@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+  </head>
+  <body>
+    <input type="file" id="file-upload">
+    <div id="output_upload"></div>
+    <py-config type="json">
+        {
+          "packages": ["numpy", "scikit-image"]
+        }
+    </py-config>
+    <py-script>
+        import asyncio
+        import io
+        import numpy as np
+        from js import document, console, Uint8Array, window, File
+        from pyodide.ffi import create_proxy
+        from skimage import io as skio
+        from skimage import filters
+        from skimage.segmentation import flood
+        from skimage.color import rgb2hsv, rgba2rgb, hsv2rgb
+        from PIL import Image
+
+        async def upload(e):
+            img = np.asarray(Image.open(io.BytesIO(bytearray(Uint8Array.new(await e.target.files.item(0).arrayBuffer())))))
+            img = rgb2hsv(img)
+            colors = [0.1, 0.5, 0.6, 0.9, 0.42, 0.2, 0.95]
+        
+            def locateWhite(img):
+                x,y = np.where((img[...,0]==0) & (img[...,1]==0) & (img[...,2]==1))
+                if len(x) > 0:
+                    return list(zip(x,y))
+                return None
+            
+            thresh = filters.threshold_sauvola(img[..., 2], 31, 0.1)
+            img[img[...,2] > thresh] = [0, 0, 1]
+            img[img[...,2] <= thresh] = [0, 0, 0]
+            
+            while (pos := locateWhite(img)):
+                print(f"Remaining white pixels: {len(pos)}")
+            
+                mask = flood(img[..., 2], pos[0])
+                img[mask] = [np.random.choice(colors, 1)[0], 1, 1]
+
+            img = hsv2rgb(img)
+            img = img * 255
+            img = Image.fromarray(np.uint8(img))
+
+            stream = io.BytesIO()
+            img.save(stream, format="PNG")
+            img = File.new([Uint8Array.new(stream.getvalue())], "colored.png", {type: "image/png"})
+
+            new_image = document.createElement('img')
+            new_image.src = window.URL.createObjectURL(img)
+            document.getElementById("output_upload").appendChild(new_image)
+        
+        upload_file = create_proxy(upload)
+        document.getElementById("file-upload").addEventListener("change", upload_file)
+    </py-script>
+  </body>
+</html>
