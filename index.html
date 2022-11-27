@@ -11,54 +11,68 @@
     <div id="output_upload"></div>
     <py-config type="json">
         {
-          "packages": ["numpy", "scikit-image"]
+          "packages": ["numpy", "opencv-python", "tqdm", "Pillow"]
         }
     </py-config>
     <py-script>
         import asyncio
         import io
+        import random
+        import cv2
         import numpy as np
+        from tqdm import tqdm
         from js import document, console, Uint8Array, window, File
         from pyodide.ffi import create_proxy
-        from skimage import io as skio
-        from skimage import filters
-        from skimage.segmentation import flood
-        from skimage.color import rgb2hsv, rgba2rgb, hsv2rgb
         from PIL import Image
 
         async def upload(e):
+            # Grab image from input as numpy array
             img = np.asarray(Image.open(io.BytesIO(bytearray(Uint8Array.new(await e.target.files.item(0).arrayBuffer())))))
-            img = rgb2hsv(img)
-            colors = [0.1, 0.5, 0.6, 0.9, 0.42, 0.2, 0.95]
+            
+            # Selection of colors with which to randomly fill assumed coloring page
+            colors = [[150, 20, 30], [220, 110, 60], [10, 70, 210], [110, 220, 220], [42, 232, 111], [1, 34, 111], [111, 1, 1]]
         
-            def locateWhite(img):
-                x,y = np.where((img[...,0]==0) & (img[...,1]==0) & (img[...,2]==1))
-                if len(x) > 0:
-                    return list(zip(x,y))
-                return None
-            
-            thresh = filters.threshold_sauvola(img[..., 2], 31, 0.1)
-            img[img[...,2] > thresh] = [0, 0, 1]
-            img[img[...,2] <= thresh] = [0, 0, 0]
-            
-            while (pos := locateWhite(img)):
-                print(f"Remaining white pixels: {len(pos)}")
-            
-                mask = flood(img[..., 2], pos[0])
-                img[mask] = [np.random.choice(colors, 1)[0], 1, 1]
+            # Move through the image, pixel by pixel, looking for a white pixel
+            def locateWhite(img: np.ndarray, startpos: list):
+                shape = img.shape
 
-            img = hsv2rgb(img)
-            img = img * 255
-            img = Image.fromarray(np.uint8(img))
+                while not np.array_equal(img[tuple(startpos)], [255, 255, 255]):
+                    startpos[0] = (startpos[0] + 1) % shape[0]
+                    if startpos[0] == 0:
+                        startpos[1] += 1
+                    
+                    if startpos[0] == shape[0] - 1 and startpos[1] == shape[1] - 1:
+                        return None
 
+                return startpos
+            
+            # Identify edges under varied lighting conditions (assuming input image is a coloring page photo)
+            img = cv2.adaptiveThreshold(np.max(img, axis=2), 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 43, 20)
+
+            # Create RGB image from threshold mask
+            img = np.dstack([img]*3)
+            
+            # Loop over every white pixel and flood fill (paint bucket tool) every neighbor
+            with tqdm(total=int(img.size/3)) as pbar:
+                pos = [0, 0]
+                while (pos := locateWhite(img, pos)):
+                    pbar.update((int(pos[0] + pos[1] * img.shape[1]) - pbar.n))
+                    cv2.floodFill(img, None, (pos[1], pos[0]), colors[random.randint(0, len(colors)-1)])
+                
+                pbar.update(pbar.total - pbar.n)
+
+            # Transform image to javascript object
             stream = io.BytesIO()
+            img = Image.fromarray(np.uint8(img))
             img.save(stream, format="PNG")
             img = File.new([Uint8Array.new(stream.getvalue())], "colored.png", {type: "image/png"})
 
+            # Show image
             new_image = document.createElement('img')
             new_image.src = window.URL.createObjectURL(img)
             document.getElementById("output_upload").appendChild(new_image)
         
+        # Attach upload handler
         upload_file = create_proxy(upload)
         document.getElementById("file-upload").addEventListener("change", upload_file)
     </py-script>
