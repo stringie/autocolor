@@ -20,35 +20,7 @@
         // Selection of colors with which to randomly fill assumed coloring page
         let colors = [[150, 20, 30, 255], [220, 110, 60, 255], [10, 70, 210, 255], [110, 220, 220, 255], [42, 232, 111, 255], [1, 34, 111, 255], [111, 1, 1, 255]]
 
-        // Move through the image, pixel by pixel, looking for a white pixel
-        function locateWhite(img, startpos) {
-            while 
-            (
-                img.data[startpos[0] * img.cols * img.channels() + startpos[1] * img.channels()] != 255 ||
-                img.data[startpos[0] * img.cols * img.channels() + startpos[1] * img.channels() + 1] != 255 ||
-                img.data[startpos[0] * img.cols * img.channels() + startpos[1] * img.channels() + 2] != 255
-            ) {
-                startpos[1] = (startpos[1] + 1) % img.cols
-                if (startpos[1] == 0) {
-                    startpos[0] += 1;
-                }
-                
-                if (startpos[0] == img.rows - 1 && startpos[1] == img.cols - 1) {
-                    return null
-                }
-            }
-
-            return startpos
-        };
-
-        function threshold(img) {
-            let dst = new cv.Mat()
-
-            cv.adaptiveThreshold(img, dst, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 43, 20)
-
-            return dst;
-        }
-
+        // Get 'Value' in HSV color space from RGB image (used for better thresholding)
         function max(img) {
             let out = new cv.Mat(img.rows, img.cols, cv.CV_8UC1);
 
@@ -65,26 +37,61 @@
                 }
             }
 
+            img.delete();
+
             return out;
         }
 
+        // Make all clearly black pixels based on threshold 0, else 255
+        function threshold(img) {
+            cv.adaptiveThreshold(img, img, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 43, 20)
+
+            return img;
+        }
+
+        // Stackk 3 threshold matrices ontop to make a single 3 channel RGB placeholder image for filling in colors
         function stack(img) {
             let out = new cv.Mat();
             let planes = new cv.MatVector();
 
             planes.push_back(img);
             planes.push_back(img);
-            planes.push_back(img)
+            planes.push_back(img);
 
             cv.merge(planes, out);
+            
+            planes.delete();
+            img.delete();
 
             return out;
         }
 
+        // Use floodfill (paint-bucket tool) to fill in any large white connected structures in image
         function color(img) {
-            pos = locateWhite(img, [0, 0])
+            // Move through the image, pixel by pixel, looking for a white pixel
+            function locateWhite(img, startpos) {
+                let pixel = img.ucharPtr(startpos[0], startpos[1]);
+
+                while (pixel[0] != 255 || pixel[0] != 255 || pixel[0] != 255) {
+                    startpos[1] = (startpos[1] + 1) % img.cols
+                    if (startpos[1] == 0) {
+                        startpos[0] += 1;
+                    }
+                    
+                    if (startpos[0] == img.rows - 1 && startpos[1] == img.cols - 1) {
+                        return null;
+                    }
+
+                    pixel = img.ucharPtr(startpos[0], startpos[1]);
+                }
+
+                return startpos;
+            };
+
+            let pos = locateWhite(img, [0, 0])
+            let mask = new cv.Mat.zeros(img.rows+2, img.cols+2, cv.CV_8UC1);
             while (pos) {
-                cv.floodFill(img, new cv.Mat(), {x: pos[1], y: pos[0]}, colors[Math.floor(Math.random() * colors.length)]);
+                cv.floodFill(img, mask, {x: pos[1], y: pos[0]}, colors[Math.floor(Math.random() * colors.length)]);
                 pos = locateWhite(img, pos);
             }
 
