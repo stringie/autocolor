@@ -3,22 +3,154 @@
 
 <head>
     <meta charset="utf-8">
+    <link href="./LilitaOne-Regular.ttf" rel="stylesheet" />
+    <!-- <link rel="preload" href="./LilitaOne-Regular.ttf" as="font" type="font/ttf" crossorigin> -->
     <script defer src="https://docs.opencv.org/4.6.0/opencv.js" type="text/javascript"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <title>Autocolor</title>
 </head>
 
-<body>
-    <div>
-        <img hidden id="imageSrc" alt="No Image" />
-        <input type="file" id="fileInput" name="file" />
-        <canvas id="canvasOutput"></canvas>
+<body style="background-color: #E8F1FF;">
+    <div class="flex flex-col items-center">
+        <div class="flex flex-row relative">
+            <button id="title" onclick="autocolor()">
+                <span style='color: #00FFF0'>A</span>
+                <span style='color: #FF00E5'>u</span>
+                <span style='color: #FFF500'>t</span>
+                <span style='color: #05FF00'>o</span>
+                <span style='color: #FF0000'>c</span>
+                <span style='color: #2400FF'>o</span>
+                <span style='color: #8F00FF'>l</span>
+                <span style='color: #FF7A00'>o</span>
+                <span style='color: #FF008A'>r</span>
+            </button>
+            <img hidden id="pressme" src="./images/pressme.svg" alt="" class="absolute top-2 -right-36">
+        </div>
+        <div class="flex flex-row gap-4">
+            <div id="upload" class="upload-image relative">
+                <div id="upload-box" class="upload-box">
+                    <canvas id="canvas" class="absolute z-10"></canvas>
+                </div>
+                <div class="upload-text">
+                    <img class="mx-auto -mb-7" src="./images/arrow.svg">
+                    <img class="mx-auto mb-5" src="./images/box.svg">
+                    <span>Choose an image or drag it here!</span>
+                </div>
+            </div>
+            <div class="flex flex-col gap-1">
+                <div class="colors-drop">
+                    <div class="colors-drop-box"></div>
+                    <span class="colors-drop-title">Colors</span>
+                    <textarea id="colordrop" onchange="colorDrop()" class="colors-drop-text">#ffffff</textarea>
+                </div>
+                <button onclick="plusColor()" id="plus" class="add-button rounded-full my-1">
+                    <div class="add-button-box rounded-full"></div>
+                    <div class="add-button-hor-line"></div>
+                    <div class="add-button-ver-line"></div>
+                </button>
+                <button onclick="minusColor()" id="minus" class="add-button rounded-full">
+                    <div class="add-button-box rounded-full"></div>
+                    <div class="add-button-ver-line"></div>
+                </button>
+
+                <div id="colors" class="flex flex-col">
+                    <input id="color0" onchange="changeColor(this)" type="color" value="#ffffff" class="color" />
+                </div>
+            </div>
+        </div>
     </div>
     <script type="text/javascript">
-        let imgElement = document.getElementById('imageSrc');
-        let inputElement = document.getElementById('fileInput');
-        
         // Selection of colors with which to randomly fill assumed coloring page
-        let colors = [[150, 20, 30, 255], [220, 110, 60, 255], [10, 70, 210, 255], [110, 220, 220, 255], [42, 232, 111, 255], [1, 34, 111, 255], [111, 1, 1, 255]]
+        var colors = ["#ffffff"];
+        var image;
+        var upload = document.getElementById("upload");
+        var uploadBox = document.getElementById("upload-box");
+
+        // Create fake input element for uploading images
+        var fakeInput = document.createElement("input");
+        fakeInput.type = "file";
+        fakeInput.accept = "image/*";
+        fakeInput.multiple = false;
+        upload.addEventListener('click', function () {
+            fakeInput.click();
+        });
+
+        upload.addEventListener('dragenter', preventDefault, false);
+        upload.addEventListener('dragleave', preventDefault, false);
+        upload.addEventListener('dragover', preventDefault, false);
+        upload.addEventListener('drop', preventDefault, false);
+        upload.addEventListener('drop', handleImage, false);
+        fakeInput.addEventListener('change', handleImage, false);
+
+        function preventDefault(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleImage(e) {
+            var files = e.target.files;
+            if (!files) {
+                files = e.dataTransfer.files;
+            }
+
+            var canvas = document.getElementById('canvas');
+            var ctx = canvas.getContext('2d');
+
+            var img = new Image;
+            img.src = URL.createObjectURL(files[0]);
+            img.onload = function () {
+                image = cv.imread(img);
+                image = stack(threshold(max(image)));
+
+                canvas.height = 800;
+                canvas.width = 800;
+                let vRatio = canvas.height / img.height;
+                let hRatio = canvas.width / img.width;
+                let ratio = Math.min(hRatio, vRatio);
+
+                uploadBox.style.width = img.width * ratio + "px";
+                upload.style.width = img.width * ratio + "px";
+
+                let showImage = new cv.Mat();
+                cv.resize(image, showImage, new cv.Size(img.width * ratio, img.height * ratio));
+                cv.imshow(canvas, showImage);
+
+                showImage.delete()
+
+                pressme();
+            }
+        }
+
+        function pressme() {
+            let pressme = document.getElementById("pressme");
+            if (colors.length > 0 && image) {
+                pressme.hidden = false;
+            } else {
+                pressme.hidden = true;
+            }
+        }
+
+        function hexToRgb(hex) {
+            hex = hex.trim().substring(1);
+            var bigint = parseInt(hex, 16);
+            var r = (bigint >> 16) & 255;
+            var g = (bigint >> 8) & 255;
+            var b = bigint & 255;
+
+            if (r == 255) {
+                r -= 1;
+            }
+
+            if (g == 255) {
+                g -= 1;
+            }
+
+            if (b == 255) {
+                b -= 1;
+            }
+
+            return [r, g, b, 255]
+        }
 
         // Get 'Value' in HSV color space from RGB image (used for better thresholding)
         function max(img) {
@@ -30,7 +162,7 @@
                     let R = pixelImg[0];
                     let G = pixelImg[1];
                     let B = pixelImg[2];
-                    
+
                     let m = Math.max(R, G, B);
                     let pixelMax = out.ucharPtr(i, j);
                     pixelMax[0] = m;
@@ -49,7 +181,7 @@
             return img;
         }
 
-        // Stackk 3 threshold matrices ontop to make a single 3 channel RGB placeholder image for filling in colors
+        // Stack 3 threshold matrices ontop to make a single 3 channel RGB placeholder image for filling in colors
         function stack(img) {
             let out = new cv.Mat();
             let planes = new cv.MatVector();
@@ -59,7 +191,7 @@
             planes.push_back(img);
 
             cv.merge(planes, out);
-            
+
             planes.delete();
             img.delete();
 
@@ -77,7 +209,7 @@
                     if (startpos[1] == 0) {
                         startpos[0] += 1;
                     }
-                    
+
                     if (startpos[0] == img.rows - 1 && startpos[1] == img.cols - 1) {
                         return null;
                     }
@@ -89,26 +221,243 @@
             };
 
             let pos = locateWhite(img, [0, 0])
-            let mask = new cv.Mat.zeros(img.rows+2, img.cols+2, cv.CV_8UC1);
+            let mask = new cv.Mat.zeros(img.rows + 2, img.cols + 2, cv.CV_8UC1);
             while (pos) {
-                cv.floodFill(img, mask, {x: pos[1], y: pos[0]}, colors[Math.floor(Math.random() * colors.length)]);
+                cv.floodFill(img, mask, { x: pos[1], y: pos[0] }, hexToRgb(colors[Math.floor(Math.random() * colors.length)]));
                 pos = locateWhite(img, pos);
             }
 
             return img;
         }
 
-        inputElement.addEventListener('change', (e) => {
-            imgElement.src = URL.createObjectURL(e.target.files[0]);
-        }, false);
+        function autocolor() {
+            if (image) {
+                let colorImage = color(image.clone());
+                cv.resize(colorImage, colorImage, new cv.Size(canvas.width, canvas.height));
+                cv.imshow(canvas, colorImage);
 
-        imgElement.onload = function () {
-            let img = cv.imread(imgElement);
-            img = color(stack(threshold(max(img))))
+                colorImage.delete()
+            }
+        }
 
-            cv.imshow('canvasOutput', img);
-        };
+        function colorDrop() {
+            let colorDropTextarea = document.getElementById("colordrop");
+            colors = colorDropTextarea.value.split(",").map(s => s.trim());
+
+            displayColors();
+        }
+
+        function plusColor(color = "#ffffff") {
+            if (colors.length < 12) {
+                colors.push(color);
+            }
+
+            displayColors();
+        }
+
+        function minusColor() {
+            if (colors.length > 0) {
+                colors.pop()
+            }
+
+            displayColors();
+        }
+
+        function changeColor(color) {
+            let pos = color.id.split("color")[1];
+            colors[pos] = color.value;
+
+            displayColors();
+        }
+
+        function displayColors() {
+            document.getElementById("colordrop").value = colors.join(",\n")
+
+            let colorDiv = document.getElementById("colors");
+            colorDiv.innerHTML = '';
+            colors.map(c => {
+                colorDiv.insertAdjacentHTML(
+                    'beforeend',
+                    `<input id="color${colorDiv.children.length}" onchange="changeColor(this)" type="color" value="${c}" class="color"/>`
+                );
+            });
+
+            pressme();
+        }
     </script>
 </body>
 
 </html>
+
+<style>
+    @font-face {
+        font-family: 'Lilita One';
+        src: url('./assets/LilitaOne-Regular.ttf') format('truetype');
+    }
+
+    #title {
+        font-size: 128px;
+        font-family: 'Lilita One';
+        letter-spacing: -13px;
+        -webkit-text-stroke-width: 2px;
+        -webkit-text-stroke-color: black;
+    }
+
+    .upload-image {
+        width: 800px;
+        height: 800px;
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: cover;
+        opacity: 1;
+        position: relative;
+        top: 0px;
+        left: 0px;
+        overflow: hidden;
+    }
+
+    .upload-box {
+        width: 800px;
+        height: 800px;
+        background: rgba(217, 217, 217, 1);
+        opacity: 1;
+        position: relative;
+        top: 0px;
+        left: 0px;
+        border: 7px dashed rgba(129, 129, 129, 1);
+        border-top-left-radius: 42px;
+        border-top-right-radius: 42px;
+        border-bottom-left-radius: 42px;
+        border-bottom-right-radius: 42px;
+        overflow: hidden;
+    }
+
+    .upload-text {
+        width: 800px;
+        color: rgba(76, 76, 76, 1);
+        position: absolute;
+        top: 177px;
+        left: 0px;
+        font-family: Lilita One;
+        font-weight: Regular;
+        font-size: 48px;
+        opacity: 1;
+        text-align: center;
+    }
+
+    .colors-drop {
+        width: 42px;
+        height: 49px;
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: cover;
+        opacity: 1;
+        position: relative;
+        top: 0px;
+        left: 0px;
+    }
+
+    .colors-drop-box {
+        width: 42px;
+        height: 49px;
+        background: rgba(217, 217, 217, 1);
+        opacity: 1;
+        position: relative;
+        top: 0px;
+        left: 0px;
+        border: 2px solid rgba(129, 129, 129, 1);
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+    }
+
+    .colors-drop-title {
+        width: 42px;
+        color: rgba(76, 76, 76, 1);
+        position: relative;
+        top: -57px;
+        left: 6px;
+        font-family: Lilita One;
+        font-weight: Regular;
+        font-size: 11px;
+        opacity: 1;
+        text-align: center;
+    }
+
+    .colors-drop-text {
+        resize: none;
+        overflow: hidden;
+        font-size: 8px;
+        width: 40px;
+        height: 37px;
+        background: rgba(255, 255, 255, 1);
+        opacity: 1;
+        position: absolute;
+        top: 11px;
+        left: 1px;
+        border: 2px solid rgba(129, 129, 129, 1);
+        border-top-left-radius: 3px;
+        border-top-right-radius: 3px;
+        border-bottom-left-radius: 3px;
+        border-bottom-right-radius: 3px;
+    }
+
+    .color {
+        width: 44px;
+        cursor: pointer;
+        height: 48px;
+        background-color: #E8F1FF;
+    }
+
+    .color::-webkit-color-swatch {
+        border-radius: 50%;
+        border: 2px solid rgba(129, 129, 129, 1);
+    }
+
+    .add-button {
+        width: 42px;
+        height: 42px;
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: cover;
+        opacity: 1;
+        position: relative;
+        top: 0px;
+        left: 0px;
+        overflow: hidden;
+    }
+
+    .add-button-box {
+        width: 42px;
+        height: 42px;
+        background: rgba(217, 217, 217, 1);
+        opacity: 1;
+        position: relative;
+        top: 0px;
+        left: 0px;
+        border: 2px solid rgba(129, 129, 129, 1);
+    }
+
+    .add-button-hor-line {
+        width: 2px;
+        height: 22px;
+        background: rgba(76, 76, 76, 1);
+        opacity: 1;
+        position: absolute;
+        top: 10px;
+        left: 20px;
+        overflow: hidden;
+    }
+
+    .add-button-ver-line {
+        width: 22px;
+        height: 2px;
+        background: rgba(76, 76, 76, 1);
+        opacity: 1;
+        position: absolute;
+        top: 20px;
+        left: 10px;
+        overflow: hidden;
+    }
+</style>
