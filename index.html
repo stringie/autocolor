@@ -1,236 +1,80 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-    <meta charset="utf-8">
-    <link href="./assets/LilitaOne-Regular.ttf" rel="stylesheet" />
-    <script defer src="https://docs.opencv.org/4.6.0/opencv.js" type="text/javascript"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <title>Autocolor</title>
-</head>
-
-<body style="background-color: #E8F1FF;">
-    <div class="flex flex-col items-center">
-        <div class="flex flex-row relative">
-            <button id="title" onclick="autocolor()">
-                <span style='color: #00FFF0'>A</span>
-                <span style='color: #FF00E5'>u</span>
-                <span style='color: #FFF500'>t</span>
-                <span style='color: #05FF00'>o</span>
-                <span style='color: #FF0000'>c</span>
-                <span style='color: #2400FF'>o</span>
-                <span style='color: #8F00FF'>l</span>
-                <span style='color: #FF7A00'>o</span>
-                <span style='color: #FF008A'>r</span>
-            </button>
-            <img hidden id="pressme" src="./assets/pressme.svg" alt="" class="absolute top-2 -right-36">
-        </div>
-        <div class="flex flex-row gap-4">
-            <div id="upload" class="upload-image relative">
-                <div id="upload-box" class="upload-box">
-                    <canvas id="canvas" class="absolute z-10"></canvas>
+    <head>
+        <meta charset="utf-8">
+        <link href="./assets/LilitaOne-Regular.ttf" rel="stylesheet" />
+        <link href="./index.css" rel="stylesheet" />
+        <script defer src="https://docs.opencv.org/4.6.0/opencv.js" type="text/javascript"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <title>Autocolor</title>
+    </head>
+    <body style="background-color: #E8F1FF;">
+        <div class="flex flex-col items-center">
+            <div class="flex flex-row relative">
+                <button id="title" onclick="autocolor()">
+                    <span style='color: #00FFF0'>A</span>
+                    <span style='color: #FF00E5'>u</span>
+                    <span style='color: #FFF500'>t</span>
+                    <span style='color: #05FF00'>o</span>
+                    <span style='color: #FF0000'>c</span>
+                    <span style='color: #2400FF'>o</span>
+                    <span style='color: #8F00FF'>l</span>
+                    <span style='color: #FF7A00'>o</span>
+                    <span style='color: #FF008A'>r</span>
+                </button>
+                <img hidden id="pressme" src="./assets/press-me-arrow.svg" alt="" class="absolute top-2 -right-36">
+            </div>
+            <div class="relative flex flex-row">
+                <img id="addme" src="./assets/add-image-arrow.svg" alt="" class="absolute -left-64 top-16">
+                <img hidden id="whiteme" src="./assets/right-click-arrow.svg" alt="" class="absolute -left-64 top-60">
+                <div class="justify-center items-center">
+                    <div id="upload" class="upload-image mx-0">
+                        <div id="upload-box" class="upload-box relative flex items-center justify-center">
+                            <canvas id="canvas" class="absolute"></canvas>
+                            <div class="upload-text">
+                                <img class="mx-auto -mb-7" src="./assets/arrow.svg">
+                                <img class="mx-auto mb-5" src="./assets/box.svg">
+                                <span>Click to choose an image or drag it here!</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-row gap-10 p-4 absolute mx-auto w-full justify-center items-center">
+                        <button hidden id="download" onclick="download()">
+                            <img src="./assets/Download.svg" alt="">
+                        </button>
+                        <button hidden id="use" onclick="use()">
+                            <img src="./assets/use.svg" alt="">
+                        </button>
+                        <button hidden id="remove" onclick="remove()">
+                            <img src="./assets/Remove.svg" alt="">
+                        </button>
+                    </div>
                 </div>
-                <div class="upload-text">
-                    <img class="mx-auto -mb-7" src="./assets/arrow.svg">
-                    <img class="mx-auto mb-5" src="./assets/box.svg">
-                    <span>Choose an image or drag it here!</span>
+                <img hidden id="chooseme" src="./assets/add-and-change-colors-arrow.svg" alt="" class="absolute -right-72 -top-20">
+                <img hidden id="fillme" src="./assets/select-color-arrow.svg" alt="" class="absolute -right-72 top-4">
+                <div class="absolute -right-14 flex flex-col gap-1">
+                    <div class="colors-drop">
+                        <div class="colors-drop-box"></div>
+                        <span class="colors-drop-title">Colors</span>
+                        <textarea id="colordrop" onchange="colorDrop()" class="colors-drop-text"></textarea>
+                    </div>
+                    <button onclick="randomColor()" id="random" class="mt-1">
+                        <img src="./assets/Random Color.svg" alt="">
+                    </button>
+                    <button onclick="plusColor()" id="plus" class="add-button rounded-full my-1">
+                        <div class="add-button-box rounded-full"></div>
+                        <div class="add-button-hor-line"></div>
+                        <div class="add-button-ver-line"></div>
+                    </button>
+                    <button onclick="minusColor()" id="minus" class="add-button rounded-full">
+                        <div class="add-button-box rounded-full"></div>
+                        <div class="add-button-ver-line"></div>
+                    </button>
+                    <div id="colors" class="flex flex-col">
+                    </div>
                 </div>
             </div>
-            <div class="flex flex-col gap-1">
-                <div class="colors-drop">
-                    <div class="colors-drop-box"></div>
-                    <span class="colors-drop-title">Colors</span>
-                    <textarea id="colordrop" onchange="colorDrop()" class="colors-drop-text"></textarea>
-                </div>
-                <button onclick="plusColor()" id="plus" class="add-button rounded-full my-1">
-                    <div class="add-button-box rounded-full"></div>
-                    <div class="add-button-hor-line"></div>
-                    <div class="add-button-ver-line"></div>
-                </button>
-                <button onclick="minusColor()" id="minus" class="add-button rounded-full">
-                    <div class="add-button-box rounded-full"></div>
-                    <div class="add-button-ver-line"></div>
-                </button>
-
-                <div id="colors" class="flex flex-col">
-                </div>
-            </div>
         </div>
-    </div>
-    <script src="./index.js"></script>
-</body>
-
+        <script src="./index.js"></script>
+    </body>
 </html>
-
-<style>
-    @font-face {
-        font-family: 'Lilita One';
-        src: url('./assets/LilitaOne-Regular.ttf') format('truetype');
-    }
-
-    #title {
-        font-size: 128px;
-        font-family: 'Lilita One';
-        letter-spacing: -13px;
-        -webkit-text-stroke-width: 2px;
-        -webkit-text-stroke-color: black;
-    }
-
-    .upload-image {
-        width: 800px;
-        height: 800px;
-        background-repeat: no-repeat;
-        background-position: center center;
-        background-size: cover;
-        opacity: 1;
-        position: relative;
-        top: 0px;
-        left: 0px;
-        overflow: hidden;
-    }
-
-    .upload-box {
-        width: 800px;
-        height: 800px;
-        background: rgba(217, 217, 217, 1);
-        opacity: 1;
-        position: relative;
-        top: 0px;
-        left: 0px;
-        border: 7px dashed rgba(129, 129, 129, 1);
-        border-top-left-radius: 42px;
-        border-top-right-radius: 42px;
-        border-bottom-left-radius: 42px;
-        border-bottom-right-radius: 42px;
-        overflow: hidden;
-    }
-
-    .upload-text {
-        width: 800px;
-        color: rgba(76, 76, 76, 1);
-        position: absolute;
-        top: 177px;
-        left: 0px;
-        font-family: Lilita One;
-        font-weight: Regular;
-        font-size: 48px;
-        opacity: 1;
-        text-align: center;
-    }
-
-    .colors-drop {
-        width: 42px;
-        height: 49px;
-        background-repeat: no-repeat;
-        background-position: center center;
-        background-size: cover;
-        opacity: 1;
-        position: relative;
-        top: 0px;
-        left: 0px;
-    }
-
-    .colors-drop-box {
-        width: 42px;
-        height: 49px;
-        background: rgba(217, 217, 217, 1);
-        opacity: 1;
-        position: relative;
-        top: 0px;
-        left: 0px;
-        border: 2px solid rgba(129, 129, 129, 1);
-        border-top-left-radius: 4px;
-        border-top-right-radius: 4px;
-        border-bottom-left-radius: 4px;
-        border-bottom-right-radius: 4px;
-    }
-
-    .colors-drop-title {
-        width: 42px;
-        color: rgba(76, 76, 76, 1);
-        position: relative;
-        top: -57px;
-        left: 6px;
-        font-family: Lilita One;
-        font-weight: Regular;
-        font-size: 11px;
-        opacity: 1;
-        text-align: center;
-    }
-
-    .colors-drop-text {
-        resize: none;
-        overflow: hidden;
-        font-size: 8px;
-        width: 40px;
-        height: 37px;
-        background: rgba(255, 255, 255, 1);
-        opacity: 1;
-        position: absolute;
-        top: 11px;
-        left: 1px;
-        border: 2px solid rgba(129, 129, 129, 1);
-        border-top-left-radius: 3px;
-        border-top-right-radius: 3px;
-        border-bottom-left-radius: 3px;
-        border-bottom-right-radius: 3px;
-    }
-
-    .color {
-        width: 44px;
-        cursor: pointer;
-        height: 48px;
-        background-color: #E8F1FF;
-    }
-
-    .color::-webkit-color-swatch {
-        border-radius: 50%;
-        border: 2px solid rgba(129, 129, 129, 1);
-    }
-
-    .add-button {
-        width: 42px;
-        height: 42px;
-        background-repeat: no-repeat;
-        background-position: center center;
-        background-size: cover;
-        opacity: 1;
-        position: relative;
-        top: 0px;
-        left: 0px;
-        overflow: hidden;
-    }
-
-    .add-button-box {
-        width: 42px;
-        height: 42px;
-        background: rgba(217, 217, 217, 1);
-        opacity: 1;
-        position: relative;
-        top: 0px;
-        left: 0px;
-        border: 2px solid rgba(129, 129, 129, 1);
-    }
-
-    .add-button-hor-line {
-        width: 2px;
-        height: 22px;
-        background: rgba(76, 76, 76, 1);
-        opacity: 1;
-        position: absolute;
-        top: 10px;
-        left: 20px;
-        overflow: hidden;
-    }
-
-    .add-button-ver-line {
-        width: 22px;
-        height: 2px;
-        background: rgba(76, 76, 76, 1);
-        opacity: 1;
-        position: absolute;
-        top: 20px;
-        left: 10px;
-        overflow: hidden;
-    }
-</style>

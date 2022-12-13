@@ -49,13 +49,33 @@ function binaryEdgeDetection(img) {
     return stack(threshold(max(img)));
 }
 
+function colorAt(img, pos, color, mask = null, avoidBlack = false) {
+    if (!mask) {
+        mask = new cv.Mat.zeros(img.rows + 2, img.cols + 2, cv.CV_8UC1);
+    }
+
+    if (avoidBlack) {
+        let pixel = img.ucharPtr(pos[0], pos[1]);
+
+        if (pixel[0] == 0 && pixel[1] == 0 && pixel[2] == 0) {
+            return;
+        }
+    }
+    
+    cv.floodFill(img, mask, { x: pos[1], y: pos[0] }, color);
+
+    if (!mask) {
+        mask.delete();
+    }
+}
+
 // Use floodfill (paint-bucket tool) to fill in any large white connected structures in image
-function color(img, colors) {
+function colorAll(img, colors) {
     // Move through the image, pixel by pixel, looking for a white pixel
     function locateWhite(img, startpos) {
         let pixel = img.ucharPtr(startpos[0], startpos[1]);
 
-        while (pixel[0] != 255 || pixel[0] != 255 || pixel[0] != 255) {
+        while (!(pixel[0] == 255 && pixel[0] == 255 && pixel[0] == 255)) {
             startpos[1] = (startpos[1] + 1) % img.cols
             if (startpos[1] == 0) {
                 startpos[0] += 1;
@@ -71,14 +91,16 @@ function color(img, colors) {
         return startpos;
     };
 
+    // Make sure colors doesn't contain pure white (255, 255, 255, 255) or it will cause infinite loop
+
     let pos = locateWhite(img, [0, 0])
     let mask = new cv.Mat.zeros(img.rows + 2, img.cols + 2, cv.CV_8UC1);
     while (pos) {
-        cv.floodFill(img, mask, { x: pos[1], y: pos[0] }, colors[Math.floor(Math.random() * colors.length)]);
+        colorAt(img, pos, colors[Math.floor(Math.random() * colors.length)], mask)
         pos = locateWhite(img, pos);
     }
 
     return img;
 }
 
-export { binaryEdgeDetection, color }
+export { max, threshold, stack, binaryEdgeDetection, colorAll }
