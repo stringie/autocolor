@@ -1,8 +1,17 @@
 // Selection of colors with which to randomly fill assumed coloring page
 var colors = [];
 var selectedColor;
+var pencilSelected = false;
+var glassSelected = false;
+var pencilRadius = 2;
+var zoom = 2;
 var image;
 var coloredImage;
+var hiddenImage;
+var ratio;
+
+window.addEventListener("wheel", changeRadius);
+window.addEventListener("mousemove", cursorCircle);
 
 // Create fake input element for uploading images
 var fakeInput = document.createElement("input");
@@ -19,6 +28,9 @@ upload.addEventListener('dragleave', preventDefault, false);
 upload.addEventListener('dragover', preventDefault, false);
 upload.addEventListener('drop', preventDefault, false);
 upload.addEventListener('drop', handleImage, false);
+
+upload.style.width = (window.screen.availHeight * 0.7) + "px";
+upload.style.height = (window.screen.availHeight * 0.7) + "px";
 
 function handleClick() {
     fakeInput.click();
@@ -48,11 +60,11 @@ function handleImage(e) {
         image = cv.imread(img);
         image = binaryEdgeDetection(image);
 
-        canvas.height = window.innerHeight * 0.78;
-        canvas.width = window.innerHeight * 0.78;
+        canvas.height = upload.clientHeight;
+        canvas.width = upload.clientHeight;
         let vRatio = canvas.height / img.height;
         let hRatio = canvas.width / img.width;
-        let ratio = Math.min(hRatio, vRatio);
+        ratio = img.width >= img.height ? Math.max(hRatio, vRatio) : Math.min(hRatio, vRatio);
 
         uploadBox.style.width = img.width * ratio + "px";
         upload.style.width = img.width * ratio + "px";
@@ -87,6 +99,14 @@ function remove() {
     coloredImage = null;
 
     updateHints();
+
+    if (pencilSelected) {
+        pencil();   
+    }
+
+    if (glassSelected) {
+        glass();
+    }
 }
 
 function use() {
@@ -95,6 +115,7 @@ function use() {
     coloredImage = null;
 
     updateHints();
+    updateGlass();
 }
 
 function download() {
@@ -194,19 +215,192 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function fillWhite(e) {
-    if (image) {
+function changeRadius(e) {
+    if (pencilSelected) {
+        pencilRadius = Math.floor(pencilRadius + e.deltaY / 100);
+
+        if (pencilRadius < 2) {
+            pencilRadius = 2;
+        }
+
+        cursorCircle(e)
+    }
+}
+
+function cursorCircle(e) {
+    if (pencilSelected) {
+        let circle = document.getElementById("cursor-circle")
+
+        circle.parentElement.getBoundingClientRect();
+
+        circle.style.width = (pencilRadius * (glassSelected ? zoom/ratio : 1)) + "px";
+        circle.style.height = (pencilRadius * (glassSelected ? zoom/ratio : 1)) + "px";
+
+        var rect = circle.parentElement.getBoundingClientRect();
+        circle.style.left = (e.clientX - rect.left - (pencilRadius * (glassSelected ? zoom/ratio : 1))/2) + "px";
+        circle.style.top = (e.clientY - rect.top - (pencilRadius * (glassSelected ? zoom/ratio : 1))/2) + "px";
+
+        draw(e, e.clientX - rect.left, e.clientY - rect.top);
+    }
+}
+
+function moveMagnifier(e) {
+    let pos, x, y;
+    let w, h, bw;
+    /* Prevent any other actions that may occur when moving over the image */
+    e.preventDefault();
+    /* Get the cursor's x and y positions: */
+    pos = getCursorPos(e);
+    x = pos.x;
+    y = pos.y;
+
+    /* Set the position of the magnifier glass: */
+    let glass = document.getElementById("glassDiv")
+    bw = 3;
+    w = glass.offsetWidth / 2;
+    h = glass.offsetHeight / 2;
+    glass.style.left = (x - w - 7) + "px";
+    glass.style.top = (y - h - 7) + "px";
+    /* Display what the magnifier glass "sees": */
+    glass.style.backgroundPosition = "-" + ((x * zoom)/ratio - w + bw) + "px -" + ((y * zoom)/ratio - h + bw) + "px";
+}
+
+function getCursorPos(e) {
+    let a, x = 0, y = 0;
+    e = e || window.event;
+    /* Get the x and y positions of the image: */
+    a = document.getElementById("hiddenImage").parentElement.getBoundingClientRect();
+    /* Calculate the cursor's x and y coordinates, relative to the image: */
+    x = e.pageX - a.left;
+    y = e.pageY - a.top;
+    /* Consider any page scrolling: */
+    x = x - window.pageXOffset;
+    y = y - window.pageYOffset;
+    return {x : x, y : y};
+}
+
+function magnify(img) {
+    /* Create magnifier glass: */
+    let glass = document.createElement("DIV");
+    glass.setAttribute("class", "img-magnifier-glass");
+    glass.id = "glassDiv"
+    
+    /* Insert magnifier glass: */
+    img.parentElement.insertBefore(glass, img);
+    
+    /* Set background properties for the magnifier glass: */
+    glass.style.backgroundImage = "url('" + img.src + "')";
+    glass.style.backgroundRepeat = "no-repeat";
+    glass.style.backgroundSize = (image.cols * zoom) + "px " + (image.rows * zoom) + "px";
+    
+    /* Execute a function when someone moves the magnifier glass over the image: */
+    window.addEventListener("mousemove", moveMagnifier);
+    glass.addEventListener('contextmenu', preventDefault, false);
+    glass.addEventListener('contextmenu', fillWhite, false);
+    glass.addEventListener('click', fill, false)
+  }
+
+function pencil() {
+    pencilSelected = !pencilSelected;
+    let pencilImage = document.getElementById("pencil-image");
+    let cursorCircle = document.getElementById("cursor-circle");
+
+    if (pencilSelected) {
+        pencilImage.src = "./assets/pencil-selected.svg";
+        cursorCircle.hidden = false;
+        selectedColor = null;
+        displayColors();
+    } else {
+        pencilImage.src = "./assets/pencil-unselected.svg";
+        cursorCircle.hidden = true;
+    }
+}
+
+function glass() {
+    glassSelected = !glassSelected
+
+    let glassImage = document.getElementById("glass-image");
+
+    if (glassSelected) {
+        let hiddenCanvas = document.createElement("canvas");
+        hiddenCanvas.id = "hiddenCanvas";
+
+        hiddenCanvas.hidden = true;
+        cv.imshow(hiddenCanvas, image);
+
+        hiddenImage = new Image();
+        hiddenImage.id = "hiddenImage";
+        hiddenImage.src = hiddenCanvas.toDataURL();
+        hiddenImage.style.imageRendering = "pixelated";
+        
+        document.getElementById("upload-box").appendChild(hiddenImage)
+
+        magnify(hiddenImage)
+
+        glassImage.src = "./assets/glass-selected.svg";
+    } else {
+        glassImage.src = "./assets/glass-unselected.svg";
+        window.removeEventListener("mousemove", moveMagnifier);
+        document.getElementById("hiddenImage").remove()
+        document.getElementById("glassDiv").remove()
+        document.getElementById("hiddenCanvas").remove();
+    }
+}
+
+function draw(e, x, y) {
+    if (image && e.buttons == 1) {
+        e.preventDefault();
+
         let vRatio = canvas.height / image.rows;
         let hRatio = canvas.width / image.cols;
-        let ratio = Math.min(hRatio, vRatio);
+        let ratio = image.cols >= image.rows ? Math.max(hRatio, vRatio) : Math.min(hRatio, vRatio);
 
-        colorAt(image, [e.offsetY / ratio, e.offsetX / ratio], [255, 255, 255, 255], null, true);
+        colorAt(image, [y / ratio, x / ratio], [0, 0, 0, 0], pencilRadius);
         showImage(image.clone());
 
         if (coloredImage) {
             coloredImage.delete();
             coloredImage = null;
+        }
 
+        updateGlass();
+    }
+}
+
+function updateGlass() {
+    if (glassSelected) {
+        let hiddenCanvas = document.createElement("canvas") 
+        hiddenCanvas.id = "hiddenCanvas";
+        hiddenCanvas.hidden = true;
+        cv.imshow(hiddenCanvas, image);
+
+        hiddenImage.src = hiddenCanvas.toDataURL();
+        document.getElementById("glassDiv").style.backgroundImage = "url('" + hiddenImage.src + "')";
+    }
+}
+
+function fillWhite(e) {
+    if (image && !pencilSelected) {
+        let vRatio = canvas.height / image.rows;
+        let hRatio = canvas.width / image.cols;
+        let ratio = image.cols >= image.rows ? Math.max(hRatio, vRatio) : Math.min(hRatio, vRatio);
+
+        if (glassSelected) {
+            pos = getCursorPos(e);
+            x = pos.x;
+            y = pos.y;
+            fillAt(image, [y/ratio, x/ratio], [255, 255, 255, 255], null, true);
+
+            updateGlass();
+        } else {
+            fillAt(image, [e.offsetY / ratio, e.offsetX / ratio], [255, 255, 255, 255], null, true);
+        }
+
+        showImage(image.clone());
+
+        if (coloredImage) {
+            coloredImage.delete();
+            coloredImage = null;
         }
 
         updateHints();
@@ -214,18 +408,27 @@ function fillWhite(e) {
 }
 
 function fill(e) {
-    if (colors.length > 0 && selectedColor) {
+    if (colors.length > 0 && selectedColor && !pencilSelected) {
         let vRatio = canvas.height / image.rows;
         let hRatio = canvas.width / image.cols;
-        let ratio = Math.min(hRatio, vRatio);
+        let ratio = image.cols >= image.rows ? Math.max(hRatio, vRatio) : Math.min(hRatio, vRatio);
 
-        colorAt(image, [e.offsetY / ratio, e.offsetX / ratio], hexToRgba(selectedColor.value, true), null, true);
+        if (glassSelected) {
+            pos = getCursorPos(e);
+            x = pos.x;
+            y = pos.y;
+            fillAt(image, [y/ratio, x/ratio], hexToRgba(selectedColor.value, true), null, true);
+
+            updateGlass();
+        } else {
+            fillAt(image, [e.offsetY / ratio, e.offsetX / ratio], hexToRgba(selectedColor.value, true), null, true);
+        }
+
         showImage(image.clone());
 
         if (coloredImage) {
             coloredImage.delete();
             coloredImage = null;
-
         }
 
         updateHints();
@@ -271,10 +474,9 @@ function plusColor(color = "#ff0000") {
     displayColors();
 }
 
-function minusColor() {
-    if (colors.length > 0) {
-        colors.pop()
-    }
+function removeColor(color) {
+    let pos = color.id.split("color")[1];
+    colors.splice(pos, 1);
 
     displayColors();
 }
@@ -294,6 +496,9 @@ function selectColor(color) {
     }
 
     selectedColor = color;
+    if (pencilSelected) {
+        pencil()
+    }
 
     selectedColor.classList.add("color-selected");
     selectedColor.classList.remove("color")
@@ -312,7 +517,7 @@ function displayColors() {
     colors.map(c => {
         colorDiv.insertAdjacentHTML(
             'beforeend',
-            `<input id="color${colorDiv.children.length}" onclick="selectColor(this)" onchange="changeColor(this)" type="color" value="${c}" class="${selectedId && selectedId == colorDiv.children.length ? "color-selected" : "color"}"/>`
+            `<div class="relative group"><button id="color${colorDiv.children.length}" class="absolute right-0 hidden group-hover:block" onclick="removeColor(this)"><img src="./assets/remove-color.svg"/></button><input id="color${colorDiv.children.length}" onclick="selectColor(this)" onchange="changeColor(this)" type="color" value="${c}" class="${selectedId && selectedId == colorDiv.children.length ? "color-selected" : "color"}"/></div>`
         );
     });
 
@@ -378,7 +583,7 @@ function binaryEdgeDetection(img) {
     return stack(threshold(max(img)));
 }
 
-function colorAt(img, pos, color, mask = null, avoidBlack = false) {
+function fillAt(img, pos, color, mask = null, avoidBlack = false) {
     if (!mask) {
         mask = new cv.Mat.zeros(img.rows + 2, img.cols + 2, cv.CV_8UC1);
     }
@@ -395,6 +600,22 @@ function colorAt(img, pos, color, mask = null, avoidBlack = false) {
 
     if (!mask) {
         mask.delete();
+    }
+}
+
+function colorAt(img, pos, color, radius) {
+    for (let i = pos[0] - radius; i < pos[0] + radius; i++) {
+        for (let j = pos[1] - radius; j < pos[1] + radius; j++) {
+
+            if ((i - pos[0]) ** 2 + (j - pos[1]) ** 2 <= radius ** 2) {
+                let pixel = img.ucharPtr(i, j);
+
+                pixel[0] = color[0]
+                pixel[1] = color[1]
+                pixel[2] = color[2]
+                pixel[3] = color[3]
+            }
+        }
     }
 }
 
@@ -425,7 +646,7 @@ function colorAll(img, colors) {
     let pos = locateWhite(img, [0, 0])
     let mask = new cv.Mat.zeros(img.rows + 2, img.cols + 2, cv.CV_8UC1);
     while (pos) {
-        colorAt(img, pos, colors[Math.floor(Math.random() * colors.length)], mask)
+        fillAt(img, pos, colors[Math.floor(Math.random() * colors.length)], mask)
         pos = locateWhite(img, pos);
     }
 

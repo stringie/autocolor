@@ -27,7 +27,14 @@
             <div class="relative flex flex-row">
                 <img id="addme" src="./assets/add-image-arrow.svg" alt="" class="absolute -left-64 top-16">
                 <img hidden id="whiteme" src="./assets/right-click-arrow.svg" alt="" class="absolute -left-64 top-60">
-                <div class="justify-center items-center">
+                <button id="pencil" onclick="pencil()" class="absolute -left-14">
+                    <img id="pencil-image" src="./assets/pencil-unselected.svg" alt="">
+                </button>
+                <button id="glass" onclick="glass()" class="absolute -left-14 top-14">
+                    <img id="glass-image" src="./assets/glass-unselected.svg" alt="">
+                </button>
+                <div class="justify-center items-center relative overflow-hidden">
+                    <div hidden id="cursor-circle"></div>
                     <div id="upload" class="upload-image mx-0">
                         <div id="upload-box" class="upload-box relative flex items-center justify-center">
                             <canvas id="canvas" class="absolute"></canvas>
@@ -38,17 +45,17 @@
                             </div>
                         </div>
                     </div>
-                    <div class="flex flex-row gap-10 p-4 absolute mx-auto w-full justify-center items-center">
-                        <button hidden id="download" onclick="download()">
-                            <img src="./assets/Download.svg" alt="">
-                        </button>
-                        <button hidden id="use" onclick="use()">
-                            <img src="./assets/use.svg" alt="">
-                        </button>
-                        <button hidden id="remove" onclick="remove()">
-                            <img src="./assets/Remove.svg" alt="">
-                        </button>
-                    </div>
+                </div>
+                <div class="flex flex-row gap-10 p-4 -bottom-20 absolute mx-auto w-full justify-center items-center">
+                    <button hidden id="download" onclick="download()">
+                        <img src="./assets/Download.svg" alt="">
+                    </button>
+                    <button hidden id="use" onclick="use()">
+                        <img src="./assets/use.svg" alt="">
+                    </button>
+                    <button hidden id="remove" onclick="remove()">
+                        <img src="./assets/Remove.svg" alt="">
+                    </button>
                 </div>
                 <img hidden id="chooseme" src="./assets/add-and-change-colors-arrow.svg" alt="" class="absolute -right-72 -top-20">
                 <img hidden id="fillme" src="./assets/select-color-arrow.svg" alt="" class="absolute -right-72 top-4">
@@ -64,10 +71,6 @@
                     <button onclick="plusColor()" id="plus" class="add-button rounded-full my-1">
                         <div class="add-button-box rounded-full"></div>
                         <div class="add-button-hor-line"></div>
-                        <div class="add-button-ver-line"></div>
-                    </button>
-                    <button onclick="minusColor()" id="minus" class="add-button rounded-full">
-                        <div class="add-button-box rounded-full"></div>
                         <div class="add-button-ver-line"></div>
                     </button>
                     <div id="colors" class="flex flex-col">
