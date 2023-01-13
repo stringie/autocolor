@@ -35,8 +35,8 @@ upload.addEventListener('dragover', preventDefault, false);
 upload.addEventListener('drop', preventDefault, false);
 upload.addEventListener('drop', handleImage, false);
 
-upload.style.width = (window.screen.availHeight * 0.7) + "px";
-upload.style.height = (window.screen.availHeight * 0.7) + "px";
+upload.style.width = (window.screen.availHeight * 0.65) + "px";
+upload.style.height = (window.screen.availHeight * 0.65) + "px";
 
 function handleClick() {
     fakeInput.click();
