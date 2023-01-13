@@ -33,8 +33,11 @@
                 <button id="glass" onclick="glass()" class="absolute -left-14 top-14">
                     <img id="glass-image" src="./assets/glass-unselected.svg" alt="">
                 </button>
+                <button id="eyedropper" onclick="eyedropper()" class="absolute -left-14 top-28">
+                    <img id="eyedropper-image" src="./assets/eyedropper-unselected.svg" alt="">
+                </button>
                 <div class="justify-center items-center relative overflow-hidden">
-                    <div hidden id="cursor-circle"></div>
+                    <div hidden id="cursor-square"></div>
                     <div id="upload" class="upload-image mx-0">
                         <div id="upload-box" class="upload-box relative flex items-center justify-center">
                             <canvas id="canvas" class="absolute"></canvas>
@@ -47,6 +50,12 @@
                     </div>
                 </div>
                 <div class="flex flex-row gap-10 p-4 -bottom-20 absolute mx-auto w-full justify-center items-center">
+                    <button hidden id="detect" onclick="detect()">
+                        <img src="./assets/Detect.svg" alt="">
+                    </button>
+                    <button hidden id="keep" onclick="keep()">
+                        <img src="./assets/Keep.svg" alt="">
+                    </button>
                     <button hidden id="download" onclick="download()">
                         <img src="./assets/Download.svg" alt="">
                     </button>
@@ -58,7 +67,7 @@
                     </button>
                 </div>
                 <img hidden id="chooseme" src="./assets/add-and-change-colors-arrow.svg" alt="" class="absolute -right-72 -top-20">
-                <img hidden id="fillme" src="./assets/select-color-arrow.svg" alt="" class="absolute -right-72 top-4">
+                <img hidden id="fillme" src="./assets/select-color-arrow.svg" alt="" class="absolute -right-96 top-4">
                 <div class="absolute -right-14 flex flex-col gap-1">
                     <div class="colors-drop">
                         <div class="colors-drop-box"></div>
@@ -73,7 +82,7 @@
                         <div class="add-button-hor-line"></div>
                         <div class="add-button-ver-line"></div>
                     </button>
-                    <div id="colors" class="flex flex-col">
+                    <div id="colors" class="flex flex-col flex-wrap gap-x-24">
                     </div>
                 </div>
             </div>

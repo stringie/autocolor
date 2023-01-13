@@ -3,15 +3,21 @@ var colors = [];
 var selectedColor;
 var pencilSelected = false;
 var glassSelected = false;
+var eyedropperSelected = false;
+var accepted = false;
 var pencilRadius = 2;
-var zoom = 2;
+var zoom = 1.42;
 var image;
 var coloredImage;
 var hiddenImage;
 var ratio;
 
 window.addEventListener("wheel", changeRadius);
-window.addEventListener("mousemove", cursorCircle);
+window.addEventListener("mousemove", cursorSquare);
+
+timer = window.setInterval(function(){
+    handleMovement = true;
+}, 40);
 
 // Create fake input element for uploading images
 var fakeInput = document.createElement("input");
@@ -48,6 +54,7 @@ function handleImage(e) {
     }
 
     var canvas = document.getElementById('canvas');
+    var colorsDiv = document.getElementById('colors');
     upload.removeEventListener('click', handleClick, false);
     canvas.addEventListener('click', fill, false)
 
@@ -58,7 +65,6 @@ function handleImage(e) {
     img.src = URL.createObjectURL(files[0]);
     img.onload = function () {
         image = cv.imread(img);
-        image = binaryEdgeDetection(image);
 
         canvas.height = upload.clientHeight;
         canvas.width = upload.clientHeight;
@@ -69,6 +75,7 @@ function handleImage(e) {
         uploadBox.style.width = img.width * ratio + "px";
         upload.style.width = img.width * ratio + "px";
         canvas.width = img.width * ratio;
+        // colorsDiv.style.height = upload.clientHeight + "px";
 
         showImage(image.clone());
         updateHints();
@@ -80,8 +87,8 @@ function remove() {
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
     canvas.removeEventListener('click', fill, false)
 
-    canvas.height = window.innerHeight * 0.78;
-    canvas.width = window.innerHeight * 0.78;
+    canvas.height = window.innerHeight * 0.72;
+    canvas.width = window.innerHeight * 0.72;
     uploadBox.style.width = canvas.width + "px";
     upload.style.width = canvas.width + "px";
 
@@ -97,6 +104,7 @@ function remove() {
 
     image = null;
     coloredImage = null;
+    accepted = false;
 
     updateHints();
 
@@ -107,6 +115,7 @@ function remove() {
     if (glassSelected) {
         glass();
     }
+
 }
 
 function use() {
@@ -134,6 +143,36 @@ function download() {
     c.remove();
 }
 
+function keep() {
+    let out = keepColors(image);
+    image = out[0];
+
+    if (colors.length == 0) {
+        colors = out[1];
+        displayColors();
+    } else {
+        out[1].forEach(c => {
+            plusColor(c);
+        });
+    }
+
+    showImage(image.clone());
+
+    accepted = true;
+    
+    updateHints();
+}
+
+function detect() {
+    image = binaryEdgeDetection(image);
+
+    showImage(image.clone());
+    
+    accepted = true;
+
+    updateHints();
+}
+
 function updateHints() {
     let pressme = document.getElementById("pressme");
     let chooseme = document.getElementById("chooseme");
@@ -143,11 +182,21 @@ function updateHints() {
     let downloadButton = document.getElementById("download");
     let removeButton = document.getElementById("remove");
     let useButton = document.getElementById("use");
+    let keepButton = document.getElementById("keep");
+    let detectButton = document.getElementById("detect");
 
     if (image) {
         addme.hidden = true;
 
-        downloadButton.hidden = false;
+        if (accepted) {
+            downloadButton.hidden = false;
+            keepButton.hidden = true;
+            detectButton.hidden = true;
+        } else {
+            keepButton.hidden = false;
+            detectButton.hidden = false;
+        }
+
         removeButton.hidden = false;
 
         if (coloredImage) {
@@ -171,6 +220,8 @@ function updateHints() {
         addme.hidden = false;
         fillme.hidden = true;
         whiteme.hidden = true;
+        keepButton.hidden = true;
+        detectButton.hidden = true;
 
         downloadButton.hidden = true;
         removeButton.hidden = true;
@@ -223,24 +274,28 @@ function changeRadius(e) {
             pencilRadius = 2;
         }
 
-        cursorCircle(e)
+        cursorSquare(e)
     }
 }
 
-function cursorCircle(e) {
+function cursorSquare(e) {
     if (pencilSelected) {
-        let circle = document.getElementById("cursor-circle")
+        e.preventDefault();
+        let square = document.getElementById("cursor-square")
 
-        circle.parentElement.getBoundingClientRect();
+        square.parentElement.getBoundingClientRect();
 
-        circle.style.width = (pencilRadius * (glassSelected ? zoom/ratio : 1)) + "px";
-        circle.style.height = (pencilRadius * (glassSelected ? zoom/ratio : 1)) + "px";
+        square.style.width = ((pencilRadius * (glassSelected ? zoom/ratio : 1)) * 1.4) + "px";
+        square.style.height = ((pencilRadius * (glassSelected ? zoom/ratio : 1)) * 1.4) + "px";
 
-        var rect = circle.parentElement.getBoundingClientRect();
-        circle.style.left = (e.clientX - rect.left - (pencilRadius * (glassSelected ? zoom/ratio : 1))/2) + "px";
-        circle.style.top = (e.clientY - rect.top - (pencilRadius * (glassSelected ? zoom/ratio : 1))/2) + "px";
+        var rect = square.parentElement.getBoundingClientRect();
+        square.style.left = (e.clientX - rect.left - ((pencilRadius * (glassSelected ? zoom/ratio : 1)) * 1.4)/2) + "px";
+        square.style.top = (e.clientY - rect.top - ((pencilRadius * (glassSelected ? zoom/ratio : 1)) * 1.4)/2) + "px";
 
-        draw(e, e.clientX - rect.left, e.clientY - rect.top);
+        if (handleMovement) {
+            draw(e, e.clientX - rect.left, e.clientY - rect.top);
+            handleMovement = false;
+        }
     }
 }
 
@@ -303,16 +358,16 @@ function magnify(img) {
 function pencil() {
     pencilSelected = !pencilSelected;
     let pencilImage = document.getElementById("pencil-image");
-    let cursorCircle = document.getElementById("cursor-circle");
+    let cursorSquare = document.getElementById("cursor-square");
 
     if (pencilSelected) {
         pencilImage.src = "./assets/pencil-selected.svg";
-        cursorCircle.hidden = false;
-        selectedColor = null;
+        cursorSquare.hidden = false;
+        selectedColor = -1;
         displayColors();
     } else {
         pencilImage.src = "./assets/pencil-unselected.svg";
-        cursorCircle.hidden = true;
+        cursorSquare.hidden = true;
     }
 }
 
@@ -343,8 +398,24 @@ function glass() {
         window.removeEventListener("mousemove", moveMagnifier);
         document.getElementById("hiddenImage").remove()
         document.getElementById("glassDiv").remove()
-        document.getElementById("hiddenCanvas").remove();
     }
+}
+
+function eyedropper() {
+    let eyedropperImage = document.getElementById("eyedropper-image");
+    eyedropperImage.src = "./assets/eyedropper-selected.svg";
+
+    const eyedropper = new EyeDropper();
+
+    eyedropper.open().then((result) => {
+        selectedColor = colors.findIndex(c => c == result.sRGBHex);
+        if (selectedColor == -1) {
+            plusColor(result.sRGBHex);
+            selectedColor = colors.length - 1;
+        }
+        displayColors();
+        eyedropperImage.src = "./assets/eyedropper-unselected.svg";
+    });
 }
 
 function draw(e, x, y) {
@@ -408,20 +479,21 @@ function fillWhite(e) {
 }
 
 function fill(e) {
-    if (colors.length > 0 && selectedColor && !pencilSelected) {
+    if (colors.length > 0 && selectedColor >= 0 && !pencilSelected) {
         let vRatio = canvas.height / image.rows;
         let hRatio = canvas.width / image.cols;
         let ratio = image.cols >= image.rows ? Math.max(hRatio, vRatio) : Math.min(hRatio, vRatio);
+        let color = document.getElementById("color" + selectedColor).value
 
         if (glassSelected) {
             pos = getCursorPos(e);
             x = pos.x;
             y = pos.y;
-            fillAt(image, [y/ratio, x/ratio], hexToRgba(selectedColor.value, true), null, true);
+            fillAt(image, [y/ratio, x/ratio], hexToRgba(color, true), null, true);
 
             updateGlass();
         } else {
-            fillAt(image, [e.offsetY / ratio, e.offsetX / ratio], hexToRgba(selectedColor.value, true), null, true);
+            fillAt(image, [e.offsetY / ratio, e.offsetX / ratio], hexToRgba(color, true), null, true);
         }
 
         showImage(image.clone());
@@ -459,24 +531,29 @@ function colorDrop() {
 }
 
 function randomColor() {
-    if (colors.length < 12) {
-        colors.push(rgbToHex(getRandomInt(0, 255), getRandomInt(0, 255), getRandomInt(0, 255)));
-    }
+    colors.push(rgbToHex(getRandomInt(0, 255), getRandomInt(0, 255), getRandomInt(0, 255)));
 
     displayColors();
 }
 
 function plusColor(color = "#ff0000") {
-    if (colors.length < 12) {
-        colors.push(color);
-    }
+    colors.push(color);
 
     displayColors();
 }
 
-function removeColor(color) {
-    let pos = color.id.split("color")[1];
-    colors.splice(pos, 1);
+function removeColor(removedId) {
+    colors.splice(removedId, 1);
+
+    if (selectedColor >= 0) {
+        if (removedId == selectedColor) {
+            selectedColor = -1
+        } else if (removedId > selectedColor) {
+            selectColor(selectedColor)
+        } else {
+            selectColor(selectedColor - 1)
+        }
+    }
 
     displayColors();
 }
@@ -485,45 +562,40 @@ function changeColor(color) {
     let pos = color.id.split("color")[1];
     colors[pos] = color.value;
 
-    selectColor(color);
+    selectColor(pos);
     displayColors();
 }
 
 function selectColor(color) {
-    if (selectedColor) {
-        selectedColor.classList.remove("color-selected");
-        selectedColor.classList.add("color");
+    if (selectedColor >= 0) {
+        let colorInput = document.getElementById("color" + selectedColor)
+        colorInput.classList.remove("color-selected");
+        colorInput.classList.add("color");
     }
 
-    selectedColor = color;
+    selectedColor = color
     if (pencilSelected) {
         pencil()
     }
 
-    selectedColor.classList.add("color-selected");
-    selectedColor.classList.remove("color")
+    if (selectedColor >= 0) {
+        let colorInput = document.getElementById("color" + selectedColor)
+        colorInput.classList.add("color-selected");
+        colorInput.classList.remove("color")
+    }
 }
 
 function displayColors() {
     document.getElementById("colordrop").value = colors.join(",\n")
-
-    let selectedId;
-    if (selectedColor) {
-        selectedId = selectedColor.id.split("color")[1];
-    }
 
     let colorDiv = document.getElementById("colors");
     colorDiv.innerHTML = '';
     colors.map(c => {
         colorDiv.insertAdjacentHTML(
             'beforeend',
-            `<div class="relative group"><button id="color${colorDiv.children.length}" class="absolute right-0 hidden group-hover:block" onclick="removeColor(this)"><img src="./assets/remove-color.svg"/></button><input id="color${colorDiv.children.length}" onclick="selectColor(this)" onchange="changeColor(this)" type="color" value="${c}" class="${selectedId && selectedId == colorDiv.children.length ? "color-selected" : "color"}"/></div>`
+            `<div class="relative group"><button class="absolute right-0 hidden group-hover:block" onclick="removeColor(${colorDiv.children.length})"><img src="./assets/remove-color.svg"/></button><input id="color${colorDiv.children.length}" onclick="selectColor(${colorDiv.children.length})" onchange="changeColor(this)" type="color" value="${c}" class="${(selectedColor >= 0) && selectedColor == colorDiv.children.length ? "color-selected" : "color"}"/><div class="pl-4 pr-5 py-3 absolute -right-24 top-0 hidden group-hover:block">${c}</div></div>`
         );
     });
-
-    if (selectedId) {
-        selectedColor = colorDiv.children[selectedId];
-    }
 
     updateHints();
 }
@@ -578,11 +650,43 @@ function stack(img) {
     return out;
 }
 
+// Do not preprocess anything, keep colors, just remove alpha channel and identify colors
+function keepColors(img) {
+    let out = new cv.Mat(img.rows, img.cols, cv.CV_8UC3);
+    let newColors = []
+
+    for (let i = 0; i < img.rows; i++) {
+        for (let j = 0; j < img.cols; j++) {
+            let pixelImg = img.ucharPtr(i, j);
+            let R = pixelImg[0];
+            let G = pixelImg[1];
+            let B = pixelImg[2];
+
+            let pixelMax = out.ucharPtr(i, j);
+            pixelMax[0] = R;
+            pixelMax[1] = G;
+            pixelMax[2] = B;
+
+            let color = rgbToHex(R, G, B)
+            let idx = newColors.findIndex(c => c == color)
+
+            if (idx == -1 && newColors.length < 36) {
+                newColors.push(color)
+            }
+        }
+    }
+
+    img.delete();
+
+    return [out, newColors];
+}
+
 // Convenience function executing preprocessing altogether
 function binaryEdgeDetection(img) {
     return stack(threshold(max(img)));
 }
 
+// Fill connected patch of color on image with another color at position
 function fillAt(img, pos, color, mask = null, avoidBlack = false) {
     if (!mask) {
         mask = new cv.Mat.zeros(img.rows + 2, img.cols + 2, cv.CV_8UC1);
@@ -598,28 +702,26 @@ function fillAt(img, pos, color, mask = null, avoidBlack = false) {
 
     cv.floodFill(img, mask, { x: pos[1], y: pos[0] }, color);
 
-    if (!mask) {
+    if (mask) {
         mask.delete();
     }
 }
 
+// Color in a square of some radius with some color as some position
 function colorAt(img, pos, color, radius) {
     for (let i = pos[0] - radius; i < pos[0] + radius; i++) {
         for (let j = pos[1] - radius; j < pos[1] + radius; j++) {
+            let pixel = img.ucharPtr(i, j);
 
-            if ((i - pos[0]) ** 2 + (j - pos[1]) ** 2 <= radius ** 2) {
-                let pixel = img.ucharPtr(i, j);
-
-                pixel[0] = color[0]
-                pixel[1] = color[1]
-                pixel[2] = color[2]
-                pixel[3] = color[3]
-            }
+            pixel[0] = color[0]
+            pixel[1] = color[1]
+            pixel[2] = color[2]
+            pixel[3] = color[3]
         }
     }
 }
 
-// Use floodfill (paint-bucket tool) to fill in any large white connected structures in image
+// Use floodfill (paint-bucket tool) to fill in all large white connected structures in image with random color
 function colorAll(img, colors) {
     // Move through the image, pixel by pixel, looking for a white pixel
     function locateWhite(img, startpos) {
