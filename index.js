@@ -7,6 +7,7 @@ var eyedropperSelected = false;
 var accepted = false;
 var pencilRadius = 2;
 var zoom = 1.42;
+var prevPoint = null;
 var image;
 var coloredImage;
 var hiddenImage;
@@ -54,7 +55,6 @@ function handleImage(e) {
     }
 
     var canvas = document.getElementById('canvas');
-    var colorsDiv = document.getElementById('colors');
     upload.removeEventListener('click', handleClick, false);
     canvas.addEventListener('click', fill, false)
 
@@ -75,7 +75,6 @@ function handleImage(e) {
         uploadBox.style.width = img.width * ratio + "px";
         upload.style.width = img.width * ratio + "px";
         canvas.width = img.width * ratio;
-        // colorsDiv.style.height = upload.clientHeight + "px";
 
         showImage(image.clone());
         updateHints();
@@ -292,8 +291,13 @@ function cursorSquare(e) {
         square.style.left = (e.clientX - rect.left - ((pencilRadius * (glassSelected ? zoom/ratio : 1)) * 1.4)/2) + "px";
         square.style.top = (e.clientY - rect.top - ((pencilRadius * (glassSelected ? zoom/ratio : 1)) * 1.4)/2) + "px";
 
+        point = [(e.clientX - rect.left)/ratio, (e.clientY - rect.top)/ratio]
         if (handleMovement) {
-            draw(e, e.clientX - rect.left, e.clientY - rect.top);
+            if (prevPoint == null) {
+                prevPoint = point
+            }
+            drawLine(e, prevPoint, point);
+            prevPoint = point
             handleMovement = false;
         }
     }
@@ -418,16 +422,11 @@ function eyedropper() {
     });
 }
 
-function draw(e, x, y) {
+function drawLine(e, posA, posB) {
     if (image && e.buttons == 1) {
         e.preventDefault();
 
-        let vRatio = canvas.height / image.rows;
-        let hRatio = canvas.width / image.cols;
-        let ratio = image.cols >= image.rows ? Math.max(hRatio, vRatio) : Math.min(hRatio, vRatio);
-
-        colorAt(image, [y / ratio, x / ratio], [0, 0, 0, 0], pencilRadius);
-        showImage(image.clone());
+        line(posA, posB, [0, 0, 0, 255], pencilRadius);
 
         if (coloredImage) {
             coloredImage.delete();
@@ -719,6 +718,12 @@ function colorAt(img, pos, color, radius) {
             pixel[3] = color[3]
         }
     }
+}
+
+// Draw line from point A to B
+function line(posA, posB, color, radius) {
+    cv.line(image, new cv.Point(posA[0], posA[1]), new cv.Point(posB[0], posB[1]), color, radius);
+    showImage(image.clone());
 }
 
 // Use floodfill (paint-bucket tool) to fill in all large white connected structures in image with random color
