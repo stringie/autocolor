@@ -593,7 +593,7 @@ function displayColors() {
     colors.map(c => {
         colorDiv.insertAdjacentHTML(
             'beforeend',
-            `<div class="relative group"><button class="absolute right-0 hidden group-hover:block" onclick="removeColor(${colorDiv.children.length})"><img src="./assets/remove-color.svg"/></button><input id="color${colorDiv.children.length}" onclick="selectColor(${colorDiv.children.length})" onchange="changeColor(this)" type="color" value="${c}" class="${(selectedColor >= 0) && selectedColor == colorDiv.children.length ? "color-selected" : "color"}"/><div class="pl-4 pr-5 py-3 absolute -right-24 top-0 hidden group-hover:block">${c}</div></div>`
+            `<div class="relative group"><button class="absolute right-0 hidden group-hover:block" onclick="removeColor(${colorDiv.children.length})"><img src="./assets/remove-color.svg"/></button><input id="color${colorDiv.children.length}" onclick="selectColor(${colorDiv.children.length})" onchange="changeColor(this)" type="color" value="${c}" class="${(selectedColor >= 0) && selectedColor == colorDiv.children.length ? "color-selected" : "color"}"/><div class="pl-6 pr-5 py-3 absolute -right-24 top-0 hidden group-hover:block">${c}</div></div>`
         );
     });
 
