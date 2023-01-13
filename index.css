@@ -3,6 +3,10 @@
     src: url('./assets/LilitaOne-Regular.ttf') format('truetype');
 }
 
+#colors {
+    max-height: 50vh;
+}
+
 #title {
     font-size: 110px;
     font-family: 'Lilita One';
@@ -124,7 +128,8 @@
 
 .color-selected::-webkit-color-swatch {
     border-radius: 50%;
-    border: 5px dashed rgba(129, 129, 129, 1);
+    border: 2px solid rgba(129, 129, 129, 1);
+    outline: 5px dashed rgb(61, 61, 61);
 }
 
 .add-button {
@@ -173,12 +178,11 @@
     overflow: hidden;
 }
 
-#cursor-circle {
+#cursor-square {
     width: 4px;
     height: 4px;
     background-color: transparent;
-    border-radius: 50%;
-    cursor: none;
+    cursor: crosshair;
     border: 2px solid black;
     position: absolute;
     z-index: 1;
