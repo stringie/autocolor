@@ -592,7 +592,7 @@ function displayColors() {
     colors.map(c => {
         colorDiv.insertAdjacentHTML(
             'beforeend',
-            `<div class="relative group"><button class="absolute right-0 hidden group-hover:block" onclick="removeColor(${colorDiv.children.length})"><img src="./assets/remove-color.svg"/></button><input id="color${colorDiv.children.length}" onclick="selectColor(${colorDiv.children.length})" onchange="changeColor(this)" type="color" value="${c}" class="${(selectedColor >= 0) && selectedColor == colorDiv.children.length ? "color-selected" : "color"}"/><div class="pl-6 pr-5 py-3 absolute -right-24 top-0 hidden group-hover:block">${c}</div></div>`
+            `<div class="relative group"><button class="absolute right-0 hidden z-10 group-hover:block" onclick="removeColor(${colorDiv.children.length})"><img src="./assets/remove-color.svg"/></button><input id="color${colorDiv.children.length}" onclick="selectColor(${colorDiv.children.length})" onchange="changeColor(this)" type="color" value="${c}" class="${(selectedColor >= 0) && selectedColor == colorDiv.children.length ? "color-selected" : "color"}"/><div class="pl-6 pr-5 py-3 absolute -right-24 top-0 hidden group-hover:block">${c}</div></div>`
         );
     });
 
@@ -687,8 +687,10 @@ function binaryEdgeDetection(img) {
 
 // Fill connected patch of color on image with another color at position
 function fillAt(img, pos, color, mask = null, avoidBlack = false) {
+    newMask = false
     if (!mask) {
         mask = new cv.Mat.zeros(img.rows + 2, img.cols + 2, cv.CV_8UC1);
+        newMask = true
     }
 
     if (avoidBlack) {
@@ -701,8 +703,8 @@ function fillAt(img, pos, color, mask = null, avoidBlack = false) {
 
     cv.floodFill(img, mask, { x: pos[1], y: pos[0] }, color);
 
-    if (mask) {
-        mask.delete();
+    if (newMask) {
+        mask.delete()
     }
 }
 
