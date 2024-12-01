@@ -16,7 +16,7 @@ var ratio;
 window.addEventListener("wheel", changeRadius);
 window.addEventListener("mousemove", cursorSquare);
 
-timer = window.setInterval(function(){
+timer = window.setInterval(function () {
     handleMovement = true;
 }, 40);
 
@@ -94,11 +94,11 @@ function remove() {
     upload.addEventListener('click', handleClick, false);
 
     fakeInput.value = '';
-    
+
     if (coloredImage) {
         coloredImage.delete();
     }
-    
+
     image.delete();
 
     image = null;
@@ -108,7 +108,7 @@ function remove() {
     updateHints();
 
     if (pencilSelected) {
-        pencil();   
+        pencil();
     }
 
     if (glassSelected) {
@@ -158,7 +158,7 @@ function keep() {
     showImage(image.clone());
 
     accepted = true;
-    
+
     updateHints();
 }
 
@@ -166,7 +166,7 @@ function detect() {
     image = binaryEdgeDetection(image);
 
     showImage(image.clone());
-    
+
     accepted = true;
 
     updateHints();
@@ -284,14 +284,14 @@ function cursorSquare(e) {
 
         square.parentElement.getBoundingClientRect();
 
-        square.style.width = ((pencilRadius * (glassSelected ? zoom/ratio : 1)) * 1.4) + "px";
-        square.style.height = ((pencilRadius * (glassSelected ? zoom/ratio : 1)) * 1.4) + "px";
+        square.style.width = ((pencilRadius * (glassSelected ? zoom / ratio : 1)) * 1.4) + "px";
+        square.style.height = ((pencilRadius * (glassSelected ? zoom / ratio : 1)) * 1.4) + "px";
 
         var rect = square.parentElement.getBoundingClientRect();
-        square.style.left = (e.clientX - rect.left - ((pencilRadius * (glassSelected ? zoom/ratio : 1)) * 1.4)/2) + "px";
-        square.style.top = (e.clientY - rect.top - ((pencilRadius * (glassSelected ? zoom/ratio : 1)) * 1.4)/2) + "px";
+        square.style.left = (e.clientX - rect.left - ((pencilRadius * (glassSelected ? zoom / ratio : 1)) * 1.4) / 2) + "px";
+        square.style.top = (e.clientY - rect.top - ((pencilRadius * (glassSelected ? zoom / ratio : 1)) * 1.4) / 2) + "px";
 
-        point = [(e.clientX - rect.left)/ratio, (e.clientY - rect.top)/ratio]
+        point = [(e.clientX - rect.left) / ratio, (e.clientY - rect.top) / ratio]
         if (handleMovement) {
             if (prevPoint == null) {
                 prevPoint = point
@@ -321,7 +321,7 @@ function moveMagnifier(e) {
     glass.style.left = (x - w - 7) + "px";
     glass.style.top = (y - h - 7) + "px";
     /* Display what the magnifier glass "sees": */
-    glass.style.backgroundPosition = "-" + ((x * zoom)/ratio - w + bw) + "px -" + ((y * zoom)/ratio - h + bw) + "px";
+    glass.style.backgroundPosition = "-" + ((x * zoom) / ratio - w + bw) + "px -" + ((y * zoom) / ratio - h + bw) + "px";
 }
 
 function getCursorPos(e) {
@@ -335,7 +335,7 @@ function getCursorPos(e) {
     /* Consider any page scrolling: */
     x = x - window.pageXOffset;
     y = y - window.pageYOffset;
-    return {x : x, y : y};
+    return { x: x, y: y };
 }
 
 function magnify(img) {
@@ -343,21 +343,21 @@ function magnify(img) {
     let glass = document.createElement("DIV");
     glass.setAttribute("class", "img-magnifier-glass");
     glass.id = "glassDiv"
-    
+
     /* Insert magnifier glass: */
     img.parentElement.insertBefore(glass, img);
-    
+
     /* Set background properties for the magnifier glass: */
     glass.style.backgroundImage = "url('" + img.src + "')";
     glass.style.backgroundRepeat = "no-repeat";
     glass.style.backgroundSize = (image.cols * zoom) + "px " + (image.rows * zoom) + "px";
-    
+
     /* Execute a function when someone moves the magnifier glass over the image: */
     window.addEventListener("mousemove", moveMagnifier);
     glass.addEventListener('contextmenu', preventDefault, false);
     glass.addEventListener('contextmenu', fillWhite, false);
     glass.addEventListener('click', fill, false)
-  }
+}
 
 function pencil() {
     pencilSelected = !pencilSelected;
@@ -391,7 +391,7 @@ function glass() {
         hiddenImage.id = "hiddenImage";
         hiddenImage.src = hiddenCanvas.toDataURL();
         hiddenImage.style.imageRendering = "pixelated";
-        
+
         document.getElementById("upload-box").appendChild(hiddenImage)
 
         magnify(hiddenImage)
@@ -439,7 +439,7 @@ function drawLine(e, posA, posB) {
 
 function updateGlass() {
     if (glassSelected) {
-        let hiddenCanvas = document.createElement("canvas") 
+        let hiddenCanvas = document.createElement("canvas")
         hiddenCanvas.id = "hiddenCanvas";
         hiddenCanvas.hidden = true;
         cv.imshow(hiddenCanvas, image);
@@ -459,7 +459,7 @@ function fillWhite(e) {
             pos = getCursorPos(e);
             x = pos.x;
             y = pos.y;
-            fillAt(image, [y/ratio, x/ratio], [255, 255, 255, 255], null, true);
+            fillAt(image, [y / ratio, x / ratio], [255, 255, 255, 255], null, true);
 
             updateGlass();
         } else {
@@ -488,7 +488,7 @@ function fill(e) {
             pos = getCursorPos(e);
             x = pos.x;
             y = pos.y;
-            fillAt(image, [y/ratio, x/ratio], hexToRgba(color, true), null, true);
+            fillAt(image, [y / ratio, x / ratio], hexToRgba(color, true), null, true);
 
             updateGlass();
         } else {
@@ -628,6 +628,14 @@ function max(img) {
 // Make all clearly black pixels based on threshold 0, else 255
 function threshold(img) {
     cv.adaptiveThreshold(img, img, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 43, 20)
+
+    cv.bitwise_not(img, img);
+
+    for (let i = 0; i < 21; i++) {
+        cv.morphologyEx(img, img, cv.MORPH_CLOSE, cv.Mat.ones(17, 17, cv.CV_8UC1));
+    }
+
+    cv.bitwise_not(img, img);
 
     return img;
 }
