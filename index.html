@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <link href="./assets/LilitaOne-Regular.ttf" rel="stylesheet" />
+    <link href="./index.css" rel="stylesheet" />
+    <script defer src="https://docs.opencv.org/4.6.0/opencv.js" type="text/javascript"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Autocolor</title>
+</head>
+
+<body style="background-color: #E8F1FF;">
+    <div class="flex flex-col items-center">
+        <div class="flex flex-row relative">
+            <button id="title" onclick="autocolor()">
+                <span style='color: #00FFF0'>A</span>
+                <span style='color: #FF00E5'>u</span>
+                <span style='color: #FFF500'>t</span>
+                <span style='color: #05FF00'>o</span>
+                <span style='color: #FF0000'>c</span>
+                <span style='color: #2400FF'>o</span>
+                <span style='color: #8F00FF'>l</span>
+                <span style='color: #FF7A00'>o</span>
+                <span style='color: #FF008A'>r</span>
+            </button>
+            <img hidden id="pressme" src="./assets/press-me-arrow.svg" alt="" class="absolute top-2 -right-36">
+        </div>
+        <div class="relative flex flex-row">
+            <img id="addme" src="./assets/add-image-arrow.svg" alt="" class="absolute -left-64 top-16">
+            <img hidden id="whiteme" src="./assets/right-click-arrow.svg" alt="" class="absolute -left-64 top-60">
+            <button id="pencil" onclick="pencil()" class="absolute -left-14">
+                <img id="pencil-image" src="./assets/pencil-unselected.svg" alt="">
+            </button>
+            <button id="glass" onclick="glass()" class="absolute -left-14 top-14">
+                <img id="glass-image" src="./assets/glass-unselected.svg" alt="">
+            </button>
+            <button id="eyedropper" onclick="eyedropper()" class="absolute -left-14 top-28">
+                <img id="eyedropper-image" src="./assets/eyedropper-unselected.svg" alt="">
+            </button>
+            <div class="justify-center items-center relative overflow-hidden">
+                <div hidden id="cursor-square"></div>
+                <div id="upload" class="upload-image mx-0">
+                    <div id="upload-box" class="upload-box relative flex items-center justify-center">
+                        <canvas id="canvas" class="absolute"></canvas>
+                        <div class="upload-text">
+                            <img class="mx-auto -mb-7" src="./assets/arrow.svg">
+                            <img class="mx-auto mb-5" src="./assets/box.svg">
+                            <span>Click to choose an image or drag it here!</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-row gap-10 p-4 -bottom-20 absolute mx-auto w-full justify-center items-center">
+                <button hidden id="detect" onclick="detect()">
+                    <img src="./assets/Detect.svg" alt="">
+                </button>
+                <button hidden id="keep" onclick="keep()">
+                    <img src="./assets/Keep.svg" alt="">
+                </button>
+                <button hidden id="download" onclick="download()">
+                    <img src="./assets/Download.svg" alt="">
+                </button>
+                <button hidden id="use" onclick="use()">
+                    <img src="./assets/use.svg" alt="">
+                </button>
+                <button hidden id="remove" onclick="remove()">
+                    <img src="./assets/Remove.svg" alt="">
+                </button>
+            </div>
+            <img hidden id="chooseme" src="./assets/add-and-change-colors-arrow.svg" alt=""
+                class="absolute -right-72 -top-20">
+            <img hidden id="fillme" src="./assets/select-color-arrow.svg" alt="" class="absolute -right-96 -top-20">
+            <div class="relative -right-3 flex flex-col gap-1">
+                <div class="colors-drop">
+                    <div class="colors-drop-box"></div>
+                    <span class="colors-drop-title">Colors</span>
+                    <textarea id="colordrop" onchange="colorDrop()" class="colors-drop-text"></textarea>
+                </div>
+                <button onclick="randomColor()" id="random" class="mt-1">
+                    <img src="./assets/Random Color.svg" alt="">
+                </button>
+                <button onclick="plusColor()" id="plus" class="add-button rounded-full my-1">
+                    <div class="add-button-box rounded-full"></div>
+                    <div class="add-button-hor-line"></div>
+                    <div class="add-button-ver-line"></div>
+                </button>
+                <div id="colors" class="flex flex-col flex-wrap gap-x-24">
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="./index.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,199 @@
+@font-face {
+    font-family: 'Lilita One';
+    src: url('./assets/LilitaOne-Regular.ttf') format('truetype');
+}
+
+#colors {
+    max-height: 50vh;
+}
+
+#title {
+    font-size: 110px;
+    font-family: 'Lilita One';
+    letter-spacing: -10px;
+    line-height: 1.1em;
+    -webkit-text-stroke-width: 2px;
+    -webkit-text-stroke-color: black;
+}
+
+.upload-image {
+    width: 500px;
+    height: 500px;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    opacity: 1;
+    top: 0px;
+    left: 0px;
+    overflow: hidden;
+}
+
+.upload-box {
+    background: rgba(217, 217, 217, 1);
+    opacity: 1;
+    height: 100%;
+    border: 7px dashed rgba(129, 129, 129, 1);
+    border-top-left-radius: 42px;
+    border-top-right-radius: 42px;
+    border-bottom-left-radius: 42px;
+    border-bottom-right-radius: 42px;
+    overflow: hidden;
+}
+
+.upload-text {
+    color: rgba(76, 76, 76, 1);
+    font-family: Lilita One;
+    font-weight: Regular;
+    font-size: 40px;
+    opacity: 1;
+    text-align: center;
+}
+
+.colors-drop {
+    width: 42px;
+    height: 49px;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    opacity: 1;
+    position: relative;
+    top: 0px;
+    left: 0px;
+}
+
+.colors-drop-box {
+    width: 42px;
+    height: 49px;
+    background: rgba(217, 217, 217, 1);
+    opacity: 1;
+    position: relative;
+    top: 0px;
+    left: 0px;
+    border: 2px solid rgba(129, 129, 129, 1);
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+.colors-drop-title {
+    width: 42px;
+    color: rgba(76, 76, 76, 1);
+    position: relative;
+    top: -57px;
+    left: 6px;
+    font-family: Lilita One;
+    font-weight: Regular;
+    font-size: 11px;
+    opacity: 1;
+    text-align: center;
+}
+
+.colors-drop-text {
+    resize: none;
+    overflow: hidden;
+    font-size: 8px;
+    width: 40px;
+    height: 37px;
+    background: rgba(255, 255, 255, 1);
+    opacity: 1;
+    position: absolute;
+    top: 11px;
+    left: 1px;
+    border: 2px solid rgba(129, 129, 129, 1);
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+.color {
+    width: 44px;
+    cursor: pointer;
+    height: 48px;
+    background-color: #E8F1FF;
+}
+
+.color::-webkit-color-swatch {
+    border-radius: 50%;
+    border: 2px solid rgba(129, 129, 129, 1);
+}
+
+.color-selected {
+    width: 44px;
+    cursor: pointer;
+    height: 48px;
+    background-color: #E8F1FF;
+}
+
+.color-selected::-webkit-color-swatch {
+    border-radius: 50%;
+    border: 2px solid rgba(129, 129, 129, 1);
+    outline: 5px dashed rgb(61, 61, 61);
+}
+
+.add-button {
+    width: 42px;
+    height: 42px;
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    opacity: 1;
+    position: relative;
+    top: 0px;
+    left: 0px;
+    overflow: hidden;
+}
+
+.add-button-box {
+    width: 42px;
+    height: 42px;
+    background: rgba(217, 217, 217, 1);
+    opacity: 1;
+    position: relative;
+    top: 0px;
+    left: 0px;
+    border: 2px solid rgba(129, 129, 129, 1);
+}
+
+.add-button-hor-line {
+    width: 2px;
+    height: 22px;
+    background: rgba(76, 76, 76, 1);
+    opacity: 1;
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    overflow: hidden;
+}
+
+.add-button-ver-line {
+    width: 22px;
+    height: 2px;
+    background: rgba(76, 76, 76, 1);
+    opacity: 1;
+    position: absolute;
+    top: 20px;
+    left: 10px;
+    overflow: hidden;
+}
+
+#cursor-square {
+    width: 4px;
+    height: 4px;
+    background-color: transparent;
+    cursor: crosshair;
+    border: 2px solid black;
+    position: absolute;
+    z-index: 1;
+}
+
+.img-magnifier-glass {
+    position: absolute;
+    border: 3px solid #000;
+    border-radius: 50%;
+    cursor: crosshair;
+    width: 150px;
+    height: 150px;
+    image-rendering: pixelated;
+}
